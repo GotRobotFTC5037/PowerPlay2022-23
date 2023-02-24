@@ -47,7 +47,7 @@ import java.util.List;
  * of multiple stones, switching the viewport output, and communicating the results
  * of the vision processing to usercode.
  */
-@TeleOp
+@TeleOp(name = "Junction Detection", group = "Robot")
 public class AutoDetectionJunction extends LinearOpMode {
     Hardware robot = new Hardware();
     JunctionAnalysisPipeline pipeline;

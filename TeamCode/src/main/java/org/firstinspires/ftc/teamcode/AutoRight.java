@@ -121,9 +121,9 @@ public class AutoRight extends LinearOpMode {
         while (!isStarted()) {
             if (isStopRequested()) return;
             {
-                telemetry.addData("Position", signalPipeline.getAnalysis());
-                telemetry.addData("FPS", String.format("%.2f", robot.webcam.getFps()));
-                telemetry.addData("Pipeline time ms", robot.webcam.getPipelineTimeMs());
+                telemetry.addData("Park Position", signalPipeline.getAnalysis());
+                telemetry.addLine(String.format("Signal Detection FPS =%f, Pipeline Time Ms =%f", robot.webcam.getFps(), (float) robot.webcam.getPipelineTimeMs()));
+                telemetry.addLine(String.format("Junction Detection FPS =%f, Pipeline Time Ms =%f", robot.webcam2.getFps(), (float) robot.webcam2.getPipelineTimeMs()));
                 telemetry.update();
             }
         }
@@ -142,12 +142,9 @@ public class AutoRight extends LinearOpMode {
         sleep(200);
         robot.gripperWheel.setPower(.075);
 
-
-
-
-
+        //First cone placement
         moveToPosition(2,.3);
-        strafeToPosition(-2, .3);
+        strafeToPosition(-5, .3);
         robot.upperLift.setTargetPosition(2940);
         robot.upperLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         robot.upperLift.setPower(.9);
@@ -156,8 +153,8 @@ public class AutoRight extends LinearOpMode {
         robot.lift.setPower(.9);
         turnWithGyro(90,.3);
         brake();
-        strafeToPosition(-30, .5);
-        sleep(150);
+        strafeToPosition(-32, .5);
+        sleep(250);
         getJunctionPosition(.3);
         robot.upperLift.setTargetPosition(2040);
         robot.upperLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -170,6 +167,7 @@ public class AutoRight extends LinearOpMode {
         robot.upperLift.setPower(.9);
         sleep(300);
         robot.wrist.setPosition(wrist_UP);
+        //First Cone Pickup
         strafeToPosition(-12,.5);
         moveToPosition(10,.5);
         robot.upperLift.setTargetPosition(1940);
@@ -181,7 +179,7 @@ public class AutoRight extends LinearOpMode {
         lineUp();
         robot.wrist.setPosition(wrist_MID);
         robot.gripper.setPosition(grip_OPEN);
-        moveToPosition(15,.5);
+        moveToPosition(13,.5);
         robot.gripper.setPosition(grip_CLOSED);
         sleep(500);
         robot.upperLift.setTargetPosition(2940);
@@ -190,19 +188,21 @@ public class AutoRight extends LinearOpMode {
         robot.lift.setTargetPosition(2080);
         robot.lift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         robot.lift.setPower(.85);
+        //Second Cone Placement
         moveToPosition(-20,.5);
         turnWithGyro(90,.33);
         brake();
-        moveToPosition(-1,.3);
+        moveToPosition(2,.3);
         strafeToPosition(18,.5);
         brake();
+        turnWithGyro(8,-.33);
         sleep(200);
         getJunctionPosition(.3);
         sleep(300);
         robot.upperLift.setTargetPosition(2040);
         robot.upperLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         robot.upperLift.setPower(.9);
-        sleep(300);
+        sleep(800);
         robot.gripper.setPosition(grip_OPEN);
         sleep(300);
         robot.upperLift.setTargetPosition(2940);
@@ -210,24 +210,21 @@ public class AutoRight extends LinearOpMode {
         robot.upperLift.setPower(.9);
         sleep(300);
         robot.wrist.setPosition(wrist_UP);
-        sleep(200);
-        turnWithGyro(90,-.33);
-        moveToPosition(25,.5);
-        lineUp();
+        sleep(500);
 
 
+        //Park
         switch (signalPipeline.getAnalysis()) {
             case LEFT: {
-
+                strafeToPosition(-40,.5);
                 return;
             }
             case CENTER: {
-
-
+                strafeToPosition(-10,.5);
                 return;
             }
             case RIGHT: {
-
+                strafeToPosition(12,.5);
                 return;
             }
         }
@@ -242,7 +239,7 @@ public class AutoRight extends LinearOpMode {
     }
 
     public void lineUp() {
-        while (robot.leftColor.red() < 75) {
+        while (robot.leftColor.red() < 75 && robot.leftColor.blue() < 110) {
         strafeToPositionNoBrake(.5,1);
         }
         brake();
@@ -263,7 +260,7 @@ public class AutoRight extends LinearOpMode {
         }
         telemetry.addData("Position", junctionPosition);
         telemetry.addData("Width", junctionWidth);
-        telemetry.addData("Distance to move", (junctionPosition - 1075) / junctionWidth);
+        telemetry.addData("Distance to move", (junctionPosition - 820) / 100);
         telemetry.update();
         strafeToPosition((junctionPosition - 820) / 100, speed);
     }
@@ -372,8 +369,8 @@ public class AutoRight extends LinearOpMode {
             }
         }
         //go to position
-        double firsta = convertify(first - 5);//175
-        double firstb = convertify(first + 5);//-175
+        double firsta = convertify(first - 2);//175
+        double firstb = convertify(first + 2);//-175
 
         turnWithEncoder(speedDirection);
 
@@ -400,8 +397,8 @@ public class AutoRight extends LinearOpMode {
             }
         }
 
-        double seconda = convertify(second - 5);//175
-        double secondb = convertify(second + 5);//-175
+        double seconda = convertify(second - 2);//175
+        double secondb = convertify(second + 2);//-175
 
         turnWithEncoder(speedDirection / 3);
 
