@@ -1,24 +1,26 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.Acceleration;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.openftc.easyopencv.OpenCvCamera;
+import org.openftc.easyopencv.OpenCvCameraRotation;
 
-@Autonomous(name = "Chad", group = "chad")
-public class FTCChad extends LinearOpMode {
+import java.util.ArrayList;
+
+@Autonomous(name = "Right", group = "auto")
+public class AutoRight extends LinearOpMode {
     Hardware robot = new Hardware();
+    AutoDetectionJunction.JunctionAnalysisPipeline junctionPipeline;
+    AutoDetectionRight.SignalDeterminationPipeline signalPipeline;
     //28 * 20 / (2ppi * 4.125)
     Double width = 16.0; //inches
     double cpr = 751.8; //counts per rotation
@@ -32,7 +34,7 @@ public class FTCChad extends LinearOpMode {
     double wrist_DOWN = 1;
 
     double grip_OPEN = 0;
-    double grip_CLOSED = 0.37;
+    double grip_CLOSED = 0.4;
     //
     Double conversion = cpi * bias;
     Boolean exit = false;
@@ -53,9 +55,84 @@ public class FTCChad extends LinearOpMode {
         robot.backRightDrive.setDirection(DcMotor.Direction.FORWARD);
 
         robot.gripper.setPosition(grip_OPEN);
+        robot.wrist.setPosition(wrist_UP);
         robot.lift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         robot.upperLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        signalPipeline = new AutoDetectionRight.SignalDeterminationPipeline();
+        robot.webcam.setPipeline(signalPipeline);
+        robot.webcam.setMillisecondsPermissionTimeout(2500); // Timeout for obtaining permission is configurable. Set before opening.
+        robot.webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
+            @Override
+            public void onOpened() {
+                /*
+                 * Tell the webcam to start streaming images to us! Note that you must make sure
+                 * the resolution you specify is supported by the camera. If it is not, an exception
+                 * will be thrown.
+                 *
+                 * Keep in mind that the SDK's UVC driver (what OpenCvWebcam uses under the hood) only
+                 * supports streaming from the webcam in the uncompressed YUV image format. This means
+                 * that the maximum resolution you can stream at and still get up to 30FPS is 480p (640x480).
+                 * Streaming at e.g. 720p will limit you to up to 10FPS and so on and so forth.
+                 *
+                 * Also, we specify the rotation that the webcam is used in. This is so that the image
+                 * from the camera sensor can be rotated such that it is always displayed with the image upright.
+                 * For a front facing camera, rotation is defined assuming the user is looking at the screen.
+                 * For a rear facing camera or a webcam, rotation is defined assuming the camera is facing
+                 * away from the user.
+                 */
+                robot.webcam.startStreaming(800, 600, OpenCvCameraRotation.UPRIGHT);
+            }
+
+            @Override
+            public void onError(int errorCode) {
+                /*
+                 * This will be called if the camera could not be opened
+                 */
+                telemetry.addData("Camera unable to open,", "will run left");
+                telemetry.update();
+            }
+        });
+
+        robot.webcam2.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
+            @Override
+            public void onOpened() {
+                robot.webcam2.startStreaming(800, 600, OpenCvCameraRotation.UPRIGHT);
+
+                junctionPipeline = new AutoDetectionJunction.JunctionAnalysisPipeline();
+                robot.webcam2.setPipeline(junctionPipeline);
+            }
+
+            @Override
+            public void onError(int errorCode) {
+                /*
+                 * This will be called if the camera could not be opened
+                 */
+                telemetry.addData("Camera unable to open,", "will run left");
+                telemetry.update();
+            }
+        });
+
+
+        // Tell telemetry to update faster than the default 250ms period :)
+        telemetry.setMsTransmissionInterval(20);
+
+        telemetry.addData("Status", "Ready to run");
+        while (!isStarted()) {
+            if (isStopRequested()) return;
+            {
+                telemetry.addData("Position", signalPipeline.getAnalysis());
+                telemetry.addData("FPS", String.format("%.2f", robot.webcam.getFps()));
+                telemetry.addData("Pipeline time ms", robot.webcam.getPipelineTimeMs());
+                telemetry.update();
+            }
+        }
+
         waitForStart();
+
+        robot.webcam.closeCameraDevice();
+        telemetry.addData("Running", signalPipeline.getAnalysis());
+        telemetry.update();
 
         robot.wrist.setPosition(wrist_MID);
         sleep(200);
@@ -63,53 +140,188 @@ public class FTCChad extends LinearOpMode {
         sleep(100);
         robot.gripperWheel.setPower(1);
         sleep(200);
-        robot.gripperWheel.setPower(.1);
+        robot.gripperWheel.setPower(.075);
 
-        strafeToPosition(2, .3);
-        robot.lift.setTargetPosition(4900);
-        robot.lift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        robot.lift.setPower(0.9);
+
+
+
+
+        moveToPosition(2,.3);
+        strafeToPosition(-2, .3);
         robot.upperLift.setTargetPosition(2940);
         robot.upperLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        robot.upperLift.setPower(0.9);
-        moveToPosition(54.25, .3);
-        strafeToPosition(12.25, .3);
-        sleep(1000);
-        robot.upperLift.setTargetPosition(1840);
+        robot.upperLift.setPower(.9);
+        robot.lift.setTargetPosition(600);
+        robot.lift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.lift.setPower(.9);
+        turnWithGyro(90,.3);
+        brake();
+        strafeToPosition(-30, .5);
+        sleep(150);
+        getJunctionPosition(.3);
+        robot.upperLift.setTargetPosition(2040);
         robot.upperLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        robot.upperLift.setPower(0.9);
-        sleep(200);
+        robot.upperLift.setPower(.9);
+        sleep(300);
         robot.gripper.setPosition(grip_OPEN);
         sleep(200);
+        robot.upperLift.setTargetPosition(2940);
+        robot.upperLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.upperLift.setPower(.9);
+        sleep(300);
         robot.wrist.setPosition(wrist_UP);
-        sleep(5000);
+        strafeToPosition(-12,.5);
+        moveToPosition(10,.5);
+        robot.upperLift.setTargetPosition(1940);
+        robot.upperLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.upperLift.setPower(.9);
+        robot.lift.setTargetPosition(0);
+        robot.lift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.lift.setPower(.9);
+        lineUp();
+        robot.wrist.setPosition(wrist_MID);
+        robot.gripper.setPosition(grip_OPEN);
+        moveToPosition(15,.5);
+        robot.gripper.setPosition(grip_CLOSED);
+        sleep(500);
+        robot.upperLift.setTargetPosition(2940);
+        robot.upperLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.upperLift.setPower(.85);
+        robot.lift.setTargetPosition(2080);
+        robot.lift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.lift.setPower(.85);
+        moveToPosition(-20,.5);
+        turnWithGyro(90,.33);
+        brake();
+        moveToPosition(-1,.3);
+        strafeToPosition(18,.5);
+        brake();
+        sleep(200);
+        getJunctionPosition(.3);
+        sleep(300);
+        robot.upperLift.setTargetPosition(2040);
+        robot.upperLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.upperLift.setPower(.9);
+        sleep(300);
+        robot.gripper.setPosition(grip_OPEN);
+        sleep(300);
+        robot.upperLift.setTargetPosition(2940);
+        robot.upperLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.upperLift.setPower(.9);
+        sleep(300);
+        robot.wrist.setPosition(wrist_UP);
+        sleep(200);
+        turnWithGyro(90,-.33);
+        moveToPosition(25,.5);
+        lineUp();
+
+
+        switch (signalPipeline.getAnalysis()) {
+            case LEFT: {
+
+                return;
+            }
+            case CENTER: {
+
+
+                return;
+            }
+            case RIGHT: {
+
+                return;
+            }
+        }
 
     }
 
-    //
-    /*
-    This function's purpose is simply to drive forward or backward.
-    To drive backward, simply make the inches input negative.
-     */
-    public void moveToPosition(double inches, double speed) {
-        //
+    public void brake() {
+        robot.frontLeftDrive.setPower(0);
+        robot.backLeftDrive.setPower(0);
+        robot.frontRightDrive.setPower(0);
+        robot.backRightDrive.setPower(0);
+    }
+
+    public void lineUp() {
+        while (robot.leftColor.red() < 75) {
+        strafeToPositionNoBrake(.5,1);
+        }
+        brake();
+        strafeToPosition(-1,.3);
+    }
+
+    public void getJunctionPosition(double speed) {
+        double junctionWidth = 1;
+        double junctionPosition = 0;
+        double pointsPerInch;
+        ArrayList<AutoDetectionJunction.JunctionAnalysisPipeline.AnalyzedJunction> junctions = junctionPipeline.getDetectedStones();
+
+        for (AutoDetectionJunction.JunctionAnalysisPipeline.AnalyzedJunction junction : junctions) {
+            if (junction.area > junctionPosition) {
+                junctionPosition = junction.position;
+                junctionWidth = junction.width;
+            }
+        }
+        telemetry.addData("Position", junctionPosition);
+        telemetry.addData("Width", junctionWidth);
+        telemetry.addData("Distance to move", (junctionPosition - 1075) / junctionWidth);
+        telemetry.update();
+        strafeToPosition((junctionPosition - 820) / 100, speed);
+    }
+
+    public void moveToPositionWhile(double inches, double speed, boolean If) {
+
         int move = (int) (Math.round(inches * conversion));
-        //
+
         robot.backLeftDrive.setTargetPosition(robot.backLeftDrive.getCurrentPosition() + move);
         robot.frontLeftDrive.setTargetPosition(robot.frontLeftDrive.getCurrentPosition() + move);
         robot.backRightDrive.setTargetPosition(robot.backRightDrive.getCurrentPosition() + move);
         robot.frontRightDrive.setTargetPosition(robot.frontRightDrive.getCurrentPosition() + move);
-        //
+
         robot.frontLeftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         robot.frontRightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         robot.backLeftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         robot.backRightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        //
+
         robot.frontLeftDrive.setPower(speed);
         robot.backLeftDrive.setPower(speed);
         robot.frontRightDrive.setPower(speed);
         robot.backRightDrive.setPower(speed);
-        //
+
+        while (robot.frontLeftDrive.isBusy() && robot.frontRightDrive.isBusy() && robot.backLeftDrive.isBusy() && robot.backRightDrive.isBusy()) {
+            if (exit || If) {
+                robot.frontRightDrive.setPower(0);
+                robot.frontLeftDrive.setPower(0);
+                robot.backRightDrive.setPower(0);
+                robot.backLeftDrive.setPower(0);
+                return;
+            }
+        }
+        robot.frontRightDrive.setPower(0);
+        robot.frontLeftDrive.setPower(0);
+        robot.backRightDrive.setPower(0);
+        robot.backLeftDrive.setPower(0);
+        return;
+    }
+
+    public void moveToPosition(double inches, double speed) {
+
+        int move = (int) (Math.round(inches * conversion));
+
+        robot.backLeftDrive.setTargetPosition(robot.backLeftDrive.getCurrentPosition() + move);
+        robot.frontLeftDrive.setTargetPosition(robot.frontLeftDrive.getCurrentPosition() + move);
+        robot.backRightDrive.setTargetPosition(robot.backRightDrive.getCurrentPosition() + move);
+        robot.frontRightDrive.setTargetPosition(robot.frontRightDrive.getCurrentPosition() + move);
+
+        robot.frontLeftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.frontRightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.backLeftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.backRightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        robot.frontLeftDrive.setPower(speed);
+        robot.backLeftDrive.setPower(speed);
+        robot.frontRightDrive.setPower(speed);
+        robot.backRightDrive.setPower(speed);
+
         while (robot.frontLeftDrive.isBusy() && robot.frontRightDrive.isBusy() && robot.backLeftDrive.isBusy() && robot.backRightDrive.isBusy()) {
             if (exit) {
                 robot.frontRightDrive.setPower(0);
@@ -141,7 +353,7 @@ public class FTCChad extends LinearOpMode {
         double first;
         double second;
         if (speedDirection > 0) {//set target positions
-            //<editor-fold desc="turn right">
+            //turn right
             if (degrees > 10) {
                 first = (degrees - 10) + devertify(yaw);
                 second = degrees + devertify(yaw);
@@ -149,9 +361,8 @@ public class FTCChad extends LinearOpMode {
                 first = devertify(yaw);
                 second = degrees + devertify(yaw);
             }
-            //</editor-fold>
         } else {
-            //<editor-fold desc="turn left">
+            //turn left
             if (degrees > 10) {
                 first = devertify(-(degrees - 10) + devertify(yaw));
                 second = devertify(-degrees + devertify(yaw));
@@ -159,15 +370,13 @@ public class FTCChad extends LinearOpMode {
                 first = devertify(yaw);
                 second = devertify(-degrees + devertify(yaw));
             }
-            //
-            //</editor-fold>
         }
         //go to position
         double firsta = convertify(first - 5);//175
         double firstb = convertify(first + 5);//-175
-        //
+
         turnWithEncoder(speedDirection);
-        //
+
         if (Math.abs(firsta - firstb) < 11) {
             while (!(firsta < yaw && yaw < firstb) && opModeIsActive()) {//within range?
                 angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
@@ -179,7 +388,7 @@ public class FTCChad extends LinearOpMode {
                 telemetry.update();
             }
         } else {
-            //
+
             while (!((firsta < yaw && yaw < 180) || (-180 < yaw && yaw < firstb)) && opModeIsActive()) {//within range?
                 angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
                 gravity = imu.getGravity();
@@ -190,12 +399,12 @@ public class FTCChad extends LinearOpMode {
                 telemetry.update();
             }
         }
-        //
+
         double seconda = convertify(second - 5);//175
         double secondb = convertify(second + 5);//-175
-        //
+
         turnWithEncoder(speedDirection / 3);
-        //
+
         if (Math.abs(seconda - secondb) < 11) {
             while (!(seconda < yaw && yaw < secondb) && opModeIsActive()) {//within range?
                 angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
@@ -220,8 +429,7 @@ public class FTCChad extends LinearOpMode {
             robot.backLeftDrive.setPower(0);
             robot.backRightDrive.setPower(0);
         }
-        //</editor-fold>
-        //
+
         robot.frontLeftDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         robot.frontRightDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         robot.backLeftDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -238,30 +446,64 @@ public class FTCChad extends LinearOpMode {
     Negative input for inches results in left strafing.
      */
     public void strafeToPosition(double inches, double speed) {
-        //
+
         int move = (int) (Math.round(inches * conversion));
-        //
+
         robot.backLeftDrive.setTargetPosition(robot.backLeftDrive.getCurrentPosition() - move);
         robot.frontLeftDrive.setTargetPosition(robot.frontLeftDrive.getCurrentPosition() + move);
         robot.backRightDrive.setTargetPosition(robot.backRightDrive.getCurrentPosition() + move);
         robot.frontRightDrive.setTargetPosition(robot.frontRightDrive.getCurrentPosition() - move);
-        //
+
         robot.frontLeftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         robot.frontRightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         robot.backLeftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         robot.backRightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        //
+
         robot.frontLeftDrive.setPower(speed);
         robot.backLeftDrive.setPower(-speed);
         robot.frontRightDrive.setPower(-speed);
         robot.backRightDrive.setPower(speed);
-        //
+
         while (robot.frontLeftDrive.isBusy() && robot.frontRightDrive.isBusy() && robot.backLeftDrive.isBusy() && robot.backRightDrive.isBusy()) {
+            if (exit) {
+                robot.frontRightDrive.setPower(0);
+                robot.frontLeftDrive.setPower(0);
+                robot.backRightDrive.setPower(0);
+                robot.backLeftDrive.setPower(0);
+                return;
+            }
         }
         robot.frontRightDrive.setPower(0);
         robot.frontLeftDrive.setPower(0);
         robot.backRightDrive.setPower(0);
         robot.backLeftDrive.setPower(0);
+        return;
+    }
+
+    public void strafeToPositionNoBrake(double inches, double speed) {
+
+        int move = (int) (Math.round(inches * conversion));
+
+        robot.backLeftDrive.setTargetPosition(robot.backLeftDrive.getCurrentPosition() - move);
+        robot.frontLeftDrive.setTargetPosition(robot.frontLeftDrive.getCurrentPosition() + move);
+        robot.backRightDrive.setTargetPosition(robot.backRightDrive.getCurrentPosition() + move);
+        robot.frontRightDrive.setTargetPosition(robot.frontRightDrive.getCurrentPosition() - move);
+
+        robot.frontLeftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.frontRightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.backLeftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.backRightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        robot.frontLeftDrive.setPower(speed);
+        robot.backLeftDrive.setPower(-speed);
+        robot.frontRightDrive.setPower(-speed);
+        robot.backRightDrive.setPower(speed);
+
+        while (robot.frontLeftDrive.isBusy() && robot.frontRightDrive.isBusy() && robot.backLeftDrive.isBusy() && robot.backRightDrive.isBusy()) {
+            if (exit) {
+                return;
+            }
+        }
         return;
     }
 

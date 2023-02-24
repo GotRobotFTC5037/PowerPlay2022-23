@@ -48,7 +48,7 @@ import java.util.List;
  * of the vision processing to usercode.
  */
 @TeleOp
-public class autoDetectionJunction extends LinearOpMode {
+public class AutoDetectionJunction extends LinearOpMode {
     Hardware robot = new Hardware();
     JunctionAnalysisPipeline pipeline;
 
@@ -146,6 +146,7 @@ public class autoDetectionJunction extends LinearOpMode {
         static class AnalyzedJunction {
             double position;
             double area;
+            double width;
         }
 
         enum JunctionOrientation {
@@ -319,6 +320,7 @@ public class autoDetectionJunction extends LinearOpMode {
                 AnalyzedJunction analyzedJunction = new AnalyzedJunction();
                 analyzedJunction.area = regionMetrics.contourArea;
                 analyzedJunction.position = rotatedRectFitToContour.center.x;
+                analyzedJunction.width = rotatedRectFitToContour.boundingRect().width;
 
                 //internalStoneList.clear();
                 internalStoneList.add(analyzedJunction);

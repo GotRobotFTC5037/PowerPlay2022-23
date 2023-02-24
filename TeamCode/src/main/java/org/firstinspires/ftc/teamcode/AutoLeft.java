@@ -12,7 +12,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
-@Autonomous(name = "Chad", group = "chad")
+@Autonomous(name = "Left", group = "auto")
 public class AutoLeft extends LinearOpMode {
     Hardware robot = new Hardware();
     //28 * 20 / (2ppi * 4.125)
@@ -82,30 +82,25 @@ public class AutoLeft extends LinearOpMode {
 
     }
 
-    //
-    /*
-    This function's purpose is simply to drive forward or backward.
-    To drive backward, simply make the inches input negative.
-     */
     public void moveToPosition(double inches, double speed) {
-        //
+
         int move = (int) (Math.round(inches * conversion));
-        //
+
         robot.backLeftDrive.setTargetPosition(robot.backLeftDrive.getCurrentPosition() + move);
         robot.frontLeftDrive.setTargetPosition(robot.frontLeftDrive.getCurrentPosition() + move);
         robot.backRightDrive.setTargetPosition(robot.backRightDrive.getCurrentPosition() + move);
         robot.frontRightDrive.setTargetPosition(robot.frontRightDrive.getCurrentPosition() + move);
-        //
+
         robot.frontLeftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         robot.frontRightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         robot.backLeftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         robot.backRightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        //
+
         robot.frontLeftDrive.setPower(speed);
         robot.backLeftDrive.setPower(speed);
         robot.frontRightDrive.setPower(speed);
         robot.backRightDrive.setPower(speed);
-        //
+
         while (robot.frontLeftDrive.isBusy() && robot.frontRightDrive.isBusy() && robot.backLeftDrive.isBusy() && robot.backRightDrive.isBusy()) {
             if (exit) {
                 robot.frontRightDrive.setPower(0);

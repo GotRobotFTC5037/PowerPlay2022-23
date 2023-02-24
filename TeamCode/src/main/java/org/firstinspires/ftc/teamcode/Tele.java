@@ -52,7 +52,7 @@ import java.util.ArrayList;
 @TeleOp(name = "TeleOp", group = "Robot")
 public class Tele extends OpMode {
     Hardware robot = new Hardware();
-    autoDetectionJunction.JunctionAnalysisPipeline junctionPipeline;
+    AutoDetectionJunction.JunctionAnalysisPipeline junctionPipeline;
 
     double speedLimit = 1;
     double oldTime;
@@ -104,27 +104,27 @@ public class Tele extends OpMode {
         telemetry.setMsTransmissionInterval(20);
 
         // Create camera instance
-        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        //int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
 
         // Open async and start streaming inside opened callback
-        robot.webcam2.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
-            @Override
-            public void onOpened() {
-                robot.webcam2.startStreaming(800, 600, OpenCvCameraRotation.UPRIGHT);
-
-                junctionPipeline = new autoDetectionJunction.JunctionAnalysisPipeline();
-                robot.webcam2.setPipeline(junctionPipeline);
-            }
-
-            @Override
-            public void onError(int errorCode) {
-                /*
-                 * This will be called if the camera could not be opened
-                 */
-                telemetry.addData("Camera unable to open,", "will run left");
-                telemetry.update();
-            }
-        });
+//        robot.webcam2.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
+//            @Override
+//            public void onOpened() {
+//                robot.webcam2.startStreaming(800, 600, OpenCvCameraRotation.UPRIGHT);
+//
+//                junctionPipeline = new AutoDetectionJunction.JunctionAnalysisPipeline();
+//                robot.webcam2.setPipeline(junctionPipeline);
+//            }
+//
+//            @Override
+//            public void onError(int errorCode) {
+//                /*
+//                 * This will be called if the camera could not be opened
+//                 */
+//                telemetry.addData("Camera unable to open,", "will run left");
+//                telemetry.update();
+//            }
+//        });
 
 
         // Tell telemetry to update faster than the default 250ms period :)
@@ -172,7 +172,7 @@ public class Tele extends OpMode {
     @Override
     public void init_loop() {
         telemetry.addData("Robot Ready", "");
-        telemetry.addLine(String.format("Pipeline FPS=%f, RuntimeMs=%f", robot.webcam2.getFps(), (float) robot.webcam2.getPipelineTimeMs()));
+        //telemetry.addLine(String.format("Pipeline FPS=%f, RuntimeMs=%f", robot.webcam2.getFps(), (float) robot.webcam2.getPipelineTimeMs()));
         telemetry.update();
         robot.greenLED.setState(true);
     }
@@ -191,15 +191,15 @@ public class Tele extends OpMode {
     @SuppressLint("SuspiciousIndentation")
     @Override
     public void loop() {
-        ArrayList<autoDetectionJunction.JunctionAnalysisPipeline.AnalyzedJunction> stones = junctionPipeline.getDetectedStones();
-
-        for (autoDetectionJunction.JunctionAnalysisPipeline.AnalyzedJunction stone : stones) {
-            if (stone.area > junctionPipeline.maxArea) {
-                junctionPipeline.maxArea = stone.position;
-            }
-        }
-        telemetry.addData("Detection", junctionPipeline.maxArea);
-        telemetry.addData("FPS", robot.webcam2.getFps());
+//        ArrayList<AutoDetectionJunction.JunctionAnalysisPipeline.AnalyzedJunction> junctions = junctionPipeline.getDetectedStones();
+//
+//        for (AutoDetectionJunction.JunctionAnalysisPipeline.AnalyzedJunction junction : junctions) {
+//            if (junction.area > junctionPipeline.maxArea) {
+//                junctionPipeline.maxArea = junction.position;
+//            }
+//        }
+//        telemetry.addData("Detection", junctionPipeline.maxArea);
+//        telemetry.addData("FPS", robot.webcam2.getFps());
         drive(-gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_stick_x, speedLimit);
 
 
@@ -297,8 +297,6 @@ public class Tele extends OpMode {
                     robot.lift.setPower(0);
                     robot.upperLift.setPower(0);
                 }
-
-
             }
 
 
@@ -495,6 +493,8 @@ public class Tele extends OpMode {
             }
 
         }
+
+        telemetry.addData("Color Sensor", robot.rightColor.red());
 
         telemetry.addData("Lift Encoder", robot.lift.getCurrentPosition());
         telemetry.addData("Upper Lift Encoder", robot.upperLift.getCurrentPosition());
