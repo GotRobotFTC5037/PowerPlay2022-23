@@ -152,6 +152,9 @@ public class Tele extends OpMode {
             } else if (robot.lift.getCurrentPosition() > 300) {
                 speedLimit = 0.5674;
                 rotationSpeedLimit = 0.5;
+            } else if (gamepad1.right_bumper) {
+                speedLimit = 0.45;
+                rotationSpeedLimit = 0.5;
             } else {
                 speedLimit = 0.9;
                 rotationSpeedLimit = 0.9;
@@ -210,10 +213,10 @@ public class Tele extends OpMode {
                     robot.lift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     robot.lift.setPower(.85);
                 } else if (gamepad2.dpad_down) {
-                    robot.upperLift.setTargetPosition(2940);
+                    robot.upperLift.setTargetPosition(3000);
                     robot.upperLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     robot.upperLift.setPower(1);
-                    robot.lift.setTargetPosition(690);
+                    robot.lift.setTargetPosition(750);
                     robot.lift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     robot.lift.setPower(1);
                 } else if (gamepad2.dpad_right) {
@@ -378,17 +381,17 @@ public class Tele extends OpMode {
 
                 if (currentGripSwitch && !lastGripSwitch) {
                     if (!gamepad2.isRumbling())  // Check for possible overlap of rumbles.
-                    gamepad1.rumble(.65, .65, 150);
+                        gamepad1.rumble(.65, .65, 150);
                 }
                 lastGripSwitch = currentGripSwitch;
             }
 
-            if(robot.upperDownSwitch.getVoltage() > 3 && gamepad1.left_bumper) {
+            if (robot.upperDownSwitch.getVoltage() > 3 && gamepad1.left_bumper) {
                 robot.upperLift.setPower(0);
                 robot.upperLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             }
 
-            if(robot.bottomSwitch.getVoltage() > 3 && gamepad1.left_bumper) {
+            if (robot.bottomSwitch.getVoltage() > 3 && gamepad1.left_bumper) {
                 robot.lift.setPower(0);
                 robot.lift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             }

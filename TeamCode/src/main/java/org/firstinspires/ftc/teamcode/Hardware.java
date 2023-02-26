@@ -136,8 +136,8 @@ public class Hardware {
         rightColor = hwMap.get(RevColorSensorV3.class, "rcolor");
         leftColor = hwMap.get(RevColorSensorV3.class, "lcolor");
         int cameraMonitorViewId = hwMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hwMap.appContext.getPackageName());
-        webcam = OpenCvCameraFactory.getInstance().createWebcam(hwMap.get(WebcamName.class, "webcam"));
-        webcam2 = OpenCvCameraFactory.getInstance().createWebcam(hwMap.get(WebcamName.class, "webcam2"), cameraMonitorViewId);
+        webcam = OpenCvCameraFactory.getInstance().createWebcam(hwMap.get(WebcamName.class, "webcam"), cameraMonitorViewId);
+        webcam2 = OpenCvCameraFactory.getInstance().createWebcam(hwMap.get(WebcamName.class, "webcam2"));
 
         redLED.setMode(DigitalChannel.Mode.OUTPUT);
         greenLED.setMode(DigitalChannel.Mode.OUTPUT);

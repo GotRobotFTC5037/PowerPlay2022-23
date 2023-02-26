@@ -5,6 +5,7 @@ import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.HardwareDevice;
 
 import org.firstinspires.ftc.robotcore.external.navigation.Acceleration;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -13,6 +14,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraRotation;
+import org.openftc.easyopencv.OpenCvViewport;
 
 import java.util.ArrayList;
 
@@ -60,6 +62,27 @@ public class AutoRight extends LinearOpMode {
         robot.upperLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         signalPipeline = new AutoDetectionRight.SignalDeterminationPipeline();
+        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+
+        robot.webcam2.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
+            @Override
+            public void onOpened() {
+                robot.webcam2.startStreaming(800, 600, OpenCvCameraRotation.UPRIGHT);
+
+                junctionPipeline = new AutoDetectionJunction.JunctionAnalysisPipeline();
+                robot.webcam2.setPipeline(junctionPipeline);
+            }
+
+            @Override
+            public void onError(int errorCode) {
+                /*
+                 * This will be called if the camera could not be opened
+                 */
+                telemetry.addData("Camera unable to open,", "will run left");
+                telemetry.update();
+            }
+        });
+
         robot.webcam.setPipeline(signalPipeline);
         robot.webcam.setMillisecondsPermissionTimeout(2500); // Timeout for obtaining permission is configurable. Set before opening.
         robot.webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
@@ -82,25 +105,6 @@ public class AutoRight extends LinearOpMode {
                  * away from the user.
                  */
                 robot.webcam.startStreaming(800, 600, OpenCvCameraRotation.UPRIGHT);
-            }
-
-            @Override
-            public void onError(int errorCode) {
-                /*
-                 * This will be called if the camera could not be opened
-                 */
-                telemetry.addData("Camera unable to open,", "will run left");
-                telemetry.update();
-            }
-        });
-
-        robot.webcam2.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
-            @Override
-            public void onOpened() {
-                robot.webcam2.startStreaming(800, 600, OpenCvCameraRotation.UPRIGHT);
-
-                junctionPipeline = new AutoDetectionJunction.JunctionAnalysisPipeline();
-                robot.webcam2.setPipeline(junctionPipeline);
             }
 
             @Override
@@ -169,7 +173,7 @@ public class AutoRight extends LinearOpMode {
         robot.wrist.setPosition(wrist_UP);
         //First Cone Pickup
         strafeToPosition(-12,.5);
-        moveToPosition(10,.5);
+        moveToPosition(12,.5);
         robot.upperLift.setTargetPosition(1940);
         robot.upperLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         robot.upperLift.setPower(.9);
@@ -179,7 +183,7 @@ public class AutoRight extends LinearOpMode {
         lineUp();
         robot.wrist.setPosition(wrist_MID);
         robot.gripper.setPosition(grip_OPEN);
-        moveToPosition(13,.5);
+        moveToPosition(11,.4);
         robot.gripper.setPosition(grip_CLOSED);
         sleep(500);
         robot.upperLift.setTargetPosition(2940);
@@ -216,7 +220,7 @@ public class AutoRight extends LinearOpMode {
         //Park
         switch (signalPipeline.getAnalysis()) {
             case LEFT: {
-                strafeToPosition(-40,.5);
+                strafeToPosition(12,.5);
                 return;
             }
             case CENTER: {
@@ -224,7 +228,7 @@ public class AutoRight extends LinearOpMode {
                 return;
             }
             case RIGHT: {
-                strafeToPosition(12,.5);
+                strafeToPosition(-30,.5);
                 return;
             }
         }
